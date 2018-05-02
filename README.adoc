@@ -23,21 +23,38 @@ include::https://raw.githubusercontent.com/spring-guides/getting-started-macros/
 
 First you'll need to setup a Java project for Maven to build. To keep the focus on Maven, make the project as simple as possible for now. Create this structure in a project folder of your choosing.
 
-include::https://raw.githubusercontent.com/spring-guides/getting-started-macros/master/create_directory_structure_hello.adoc[]
-
+----
+└── src
+    └── main
+        └── java
+            └── hello
+----
 
 Within the `src/main/java/hello` directory, you can create any Java classes you want. To maintain consistency with the rest of this guide, create these two classes: `HelloWorld.java` and `Greeter.java`.
 
 `src/main/java/hello/HelloWorld.java`
 [source,java]
 ----
-include::initial/src/main/java/hello/HelloWorld.java[]
+package hello;
+
+public class HelloWorld {
+    public static void main(String[] args) {
+        Greeter greeter = new Greeter();
+        System.out.println(greeter.sayHello());
+    }
+}
 ----
 
 `src/main/java/hello/Greeter.java`
 [source,java]
 ----
-include::initial/src/main/java/hello/Greeter.java[]
+package hello;
+
+public class Greeter {
+    public String sayHello() {
+        return "Hello world!";
+    }
+}
 ----
 
 
@@ -77,7 +94,47 @@ Create a file named _pom.xml_ at the root of the project (i.e. put it next to th
 `pom.xml`
 [source,xml]
 ----
-include::initial/pom.xml[]
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.springframework</groupId>
+    <artifactId>gs-maven</artifactId>
+    <packaging>jar</packaging>
+    <version>0.1.0</version>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer
+                                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>hello.HelloWorld</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
 ----
 
 With the exception of the optional `<packaging>` element, this is the simplest possible _pom.xml_ file necessary to build a Java project. It includes the following details of the project configuration:
@@ -135,7 +192,18 @@ First, change HelloWorld.java to look like this:
 `src/main/java/hello/HelloWorld.java`
 [source,java]
 ----
-include::complete/src/main/java/hello/HelloWorld.java[]
+package hello;
+
+import org.joda.time.LocalTime;
+
+public class HelloWorld {
+	public static void main(String[] args) {
+		LocalTime currentTime = new LocalTime();
+		System.out.println("The current local time is: " + currentTime);
+		Greeter greeter = new Greeter();
+		System.out.println(greeter.sayHello());
+	}
+}
 ----
 
 Here `HelloWorld` uses Joda Time's `LocalTime` class to get and print the current time.
@@ -145,7 +213,11 @@ If you were to run `mvn compile` to build the project now, the build would fail 
 [source,xml,indent=0]
 ----
 <dependencies>
-include::complete/pom.xml[tag=joda]
+    <dependency>
+		<groupId>joda-time</groupId>
+		<artifactId>joda-time</artifactId>
+		<version>2.9.2</version>
+    </dependency>
 </dependencies>
 ----
 
@@ -168,7 +240,12 @@ First add JUnit as a dependency to your pom.xml, in the test scope:
 
 [source,xml,indent=0]
 ----
-include::complete/pom.xml[tag=junit]
+<dependency>
+	<groupId>junit</groupId>
+	<artifactId>junit</artifactId>
+	<version>4.12</version>
+	<scope>test</scope>
+</dependency>
 ----
 
 Then create a test case like this:
@@ -176,7 +253,23 @@ Then create a test case like this:
 `src/test/java/hello/GreeterTest.java`
 [source,java]
 ----
-include::complete/src/test/java/hello/GreeterTest.java[]
+package hello;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+public class GreeterTest {
+
+	private Greeter greeter = new Greeter();
+
+	@Test
+	public void greeterSaysHello() {
+		assertThat(greeter.sayHello(), containsString("Hello"));
+	}
+
+}
 ----
 
 Maven uses a plugin called "surefire" to run unit tests. The default configuration of this plugin compiles and runs all classes in `src/test/java` with a name matching `*Test`. You can run the tests on the command line like this
@@ -192,7 +285,65 @@ Here's the completed `pom.xml` file:
 `pom.xml`
 [source,xml]
 ----
-include::complete/pom.xml[]
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.springframework</groupId>
+	<artifactId>gs-maven</artifactId>
+	<packaging>jar</packaging>
+	<version>0.1.0</version>
+
+	<properties>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+	</properties>
+
+	<dependencies>
+		<!-- tag::joda[] -->
+		<dependency>
+			<groupId>joda-time</groupId>
+			<artifactId>joda-time</artifactId>
+			<version>2.9.2</version>
+		</dependency>
+		<!-- end::joda[] -->
+		<!-- tag::junit[] -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- end::junit[] -->
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>hello.HelloWorld</mainClass>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
 ----
 
 NOTE: The completed **pom.xml** file is using the http://maven.apache.org/plugins/maven-shade-plugin/[Maven Shade Plugin]
